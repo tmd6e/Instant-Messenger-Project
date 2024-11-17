@@ -70,6 +70,7 @@ namespace InstantMessenger
                 serverSocket.Bind(ipEndPoint);
                 serverSocket.Listen(maxPeers); // Allow up to 10 pending connections
 
+                
                 if (chatroomInfo.InvokeRequired)
                 {
                     chatroomInfo.Invoke(new MethodInvoker(
@@ -88,6 +89,7 @@ namespace InstantMessenger
                             userName.BorderStyle = BorderStyle.None;
                         }));
                 }
+                
 
 
                 while (!token.IsCancellationRequested)
@@ -227,28 +229,12 @@ namespace InstantMessenger
             {
                 // Create a client socket to connect to another peer
                 peerClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                peerClientSocket.Connect(new IPEndPoint(IPAddress.Parse(peerIP), peerPort));
-                chatroomIP.Text = peerIP;
-                chatroomPort.Text = peerPort.ToString();
 
-                peerConnections.Add(peerClientSocket); // Add this peer to the connection list
-                //lblStatus.Text = "Connected to peer.";
+                // Timeout duration in milliseconds
+                int timeoutMilliseconds = 5000; // 5 seconds timeout
 
-                // Start a thread to handle communication with this peer
-                chatroomIP.ReadOnly = true;
-                chatroomIP.BackColor = Control.DefaultBackColor;
-                chatroomIP.BorderStyle = BorderStyle.None;
-                chatroomPort.ReadOnly = true;
-                chatroomPort.BackColor = Control.DefaultBackColor;
-                chatroomPort.BorderStyle = BorderStyle.None;
-                userName.ReadOnly = true;
-                userName.BackColor = Control.DefaultBackColor;
-                userName.BorderStyle = BorderStyle.None;
-                isClient = true;
-
-                cancellationTokenSource = new CancellationTokenSource();
-                CancellationToken token = cancellationTokenSource.Token;
-                clientCommunicationThread = new Thread(() => HandlePeerCommunication(peerClientSocket, token));
+                // Start the connection attempt on a separate thread
+                clientCommunicationThread = new Thread(() => TryConnectWithTimeout(peerIP, peerPort, timeoutMilliseconds));
                 clientCommunicationThread.Start();
             }
             catch (Exception ex)
@@ -380,6 +366,25 @@ namespace InstantMessenger
 
             return null;  // If no IPv4 address found
         }
+        public static IPAddress GetPublicIPAddress()
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    // Synchronously wait for the response from the external API
+                    string publicIpString = client.GetStringAsync("https://api.ipify.org").GetAwaiter().GetResult();
+
+                    IPAddress publicIp = IPAddress.Parse(publicIpString);
+                    return publicIp;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error retrieving public IP: " + ex.Message);
+                    return null;
+                }
+            }
+        }
 
         public static string ManageLines(string text, int maxLines)
         {
@@ -415,6 +420,83 @@ namespace InstantMessenger
             userName.ReadOnly = false;
             userName.BackColor = TextBox.DefaultBackColor;
             userName.BorderStyle = BorderStyle.Fixed3D;
+        }
+
+        private void TryConnectWithTimeout(string peerIP, int peerPort, int timeoutMilliseconds)
+        {
+            bool connected = false;
+            DateTime startTime = DateTime.Now;
+
+            try
+            {
+                // Start the connection attempt
+                Thread connectionThread = new Thread(() =>
+                {
+                    try
+                    {
+                        peerClientSocket.Connect(new IPEndPoint(IPAddress.Parse(peerIP), peerPort));
+                        connected = true; // Successfully connected
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle connection failure
+                        Invoke(new Action(() => MessageBox.Show("A connection error has occurred.")));
+                    }
+                });
+
+                // Start the connection thread
+                connectionThread.Start();
+
+                // Check for timeout
+                while (connectionThread.IsAlive)
+                {
+                    // Wait until the connection attempt is complete or the timeout is reached
+                    if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMilliseconds)
+                    {
+                        // Timeout reached, abort connection attempt
+                        if (peerClientSocket.Connected)
+                        {
+                            peerClientSocket.Close();
+                        }
+                        connectionThread.Abort(); // Stop the connection thread
+                        Invoke(new Action(() => MessageBox.Show("Connection attempt timed out.")));
+                        return;
+                    }
+
+                    Thread.Sleep(50); // Sleep for a short period to prevent busy-waiting
+                }
+
+                // If connected successfully, handle the successful connection
+                if (connected)
+                {
+                    Invoke(new Action(() =>
+                    {
+                        peerConnections.Add(peerClientSocket);
+
+                        chatroomIP.ReadOnly = true;
+                        chatroomIP.BackColor = Control.DefaultBackColor;
+                        chatroomIP.BorderStyle = BorderStyle.None;
+                        chatroomPort.ReadOnly = true;
+                        chatroomPort.BackColor = Control.DefaultBackColor;
+                        chatroomPort.BorderStyle = BorderStyle.None;
+                        userName.ReadOnly = true;
+                        userName.BackColor = Control.DefaultBackColor;
+                        userName.BorderStyle = BorderStyle.None;
+                        isClient = true;
+
+                        cancellationTokenSource = new CancellationTokenSource();
+                        CancellationToken token = cancellationTokenSource.Token;
+                        clientCommunicationThread = new Thread(() => HandlePeerCommunication(peerClientSocket, token));
+                        clientCommunicationThread.Start();
+                        MessageBox.Show("Connected successfully!");
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected errors
+                Invoke(new Action(() => MessageBox.Show("Error during connection attempt: " + ex.Message)));
+            }
         }
     }
 }

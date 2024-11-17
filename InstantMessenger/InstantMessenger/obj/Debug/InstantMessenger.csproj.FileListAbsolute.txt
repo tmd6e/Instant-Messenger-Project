@@ -9,3 +9,14 @@ D:\Projects\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.
 D:\Projects\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.CoreCompileInputs.cache
 D:\Projects\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.exe
 D:\Projects\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.pdb
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\bin\Debug\InstantMessenger.exe.config
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\bin\Debug\InstantMessenger.exe
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\bin\Debug\InstantMessenger.pdb
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.AssemblyReference.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.SuggestedBindingRedirects.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.Form1.resources
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.Properties.Resources.resources
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.GenerateResource.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.csproj.CoreCompileInputs.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.exe
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\Debug\InstantMessenger.pdb
