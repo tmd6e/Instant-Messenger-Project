@@ -65,7 +65,8 @@ namespace InstantMessenger
             {
                 // Retrieve local machine IP address
                 IPAddress address = GetLocalIPAddress();
-                IPEndPoint ipEndPoint = new IPEndPoint(address, 8000);  // Listening on port 8000
+                int port = int.Parse(chatroomPort.Text);
+                IPEndPoint ipEndPoint = new IPEndPoint(address, port);  // Listening on port 8000
                 // Prepare the server socket
                 serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 serverSocket.Bind(ipEndPoint);
