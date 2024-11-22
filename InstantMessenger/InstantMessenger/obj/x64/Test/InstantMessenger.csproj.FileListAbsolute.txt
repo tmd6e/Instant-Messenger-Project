@@ -1,0 +1,9 @@
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\bin\x64\Test\InstantMessenger.exe.config
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\bin\x64\Test\InstantMessenger.exe
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.csproj.AssemblyReference.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.csproj.SuggestedBindingRedirects.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.Form1.resources
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.Properties.Resources.resources
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.csproj.GenerateResource.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.csproj.CoreCompileInputs.cache
+D:\Projects\Instant-Messenger-Project\InstantMessenger\InstantMessenger\obj\x64\Test\InstantMessenger.exe

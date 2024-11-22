@@ -32,7 +32,7 @@ namespace InstantMessenger
             //Environment.Exit(0);
         }
 
-        // Start listening for incoming peer connections (server mode)
+        // This button starts a server
         private void button1_Click(object sender, EventArgs e)
         {
             if (isServerRunning || isClient) {
@@ -63,14 +63,15 @@ namespace InstantMessenger
         {
             try
             {
-
+                // Retrieve local machine IP address
                 IPAddress address = GetLocalIPAddress();
                 IPEndPoint ipEndPoint = new IPEndPoint(address, 8000);  // Listening on port 8000
+                // Prepare the server socket
                 serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 serverSocket.Bind(ipEndPoint);
                 serverSocket.Listen(maxPeers); // Allow up to 10 pending connections
 
-                
+                // Lock the server information boxes once the server is established
                 if (chatroomInfo.InvokeRequired)
                 {
                     chatroomInfo.Invoke(new MethodInvoker(
@@ -78,20 +79,12 @@ namespace InstantMessenger
                         {
                             chatroomIP.Text = ipEndPoint.Address.ToString();
                             chatroomPort.Text = ipEndPoint.Port.ToString();
-                            chatroomIP.ReadOnly = true;
-                            chatroomIP.BackColor = Control.DefaultBackColor;
-                            chatroomIP.BorderStyle = BorderStyle.None;
-                            chatroomPort.ReadOnly = true;
-                            chatroomPort.BackColor = Control.DefaultBackColor;
-                            chatroomPort.BorderStyle = BorderStyle.None;
-                            userName.ReadOnly = true;
-                            userName.BackColor = Control.DefaultBackColor;
-                            userName.BorderStyle = BorderStyle.None;
+                            LockUI();
                         }));
                 }
                 
 
-
+                // Start the communication thread for any incoming clients
                 while (!token.IsCancellationRequested)
                 {
                     if (serverSocket.Poll(100, SelectMode.SelectRead))
@@ -99,8 +92,6 @@ namespace InstantMessenger
                         // Accept incoming peer connection
                         Socket incomingPeerSocket = serverSocket.Accept();
                         peerConnections.Add(incomingPeerSocket); // Add the new peer to the connection list
-
-                        //lblStatus.Invoke(new Action(() => lblStatus.Text = "Peer connected"));
 
                         // Start a new thread to handle communication with the incoming peer
                         Thread peerCommunicationThread = new Thread(() => HandlePeerCommunication(incomingPeerSocket, token));
@@ -118,7 +109,7 @@ namespace InstantMessenger
             }
         }
 
-        // Handle communication with a connected peer
+        // Handle communication connected peers
         private void HandlePeerCommunication(Socket peerSocket, CancellationToken token)
         {
             try
@@ -127,6 +118,7 @@ namespace InstantMessenger
                 byte[] historyBuffer = Encoding.UTF8.GetBytes(chatHistory);
                 int bytesRead;
 
+                // If the application is the server, update incoming peers with chat history
                 if (isServerRunning)
                 {
                     peerSocket.Send(historyBuffer);
@@ -142,6 +134,7 @@ namespace InstantMessenger
                         if (bytesRead == 0)
                             break;
 
+                        // Take any peer message and update the chat history with it
                         string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                         chatHistory += receivedMessage + Environment.NewLine;
                         chatHistory = ManageLines(chatHistory, maxLines);
@@ -153,7 +146,7 @@ namespace InstantMessenger
                         {
                             if (socket.Connected)
                             {
-                                socket.Send(historyBuffer); // Send the message to the peer
+                                socket.Send(historyBuffer); // Update history for all connected clients
                             }
                         }
                     }
@@ -161,7 +154,7 @@ namespace InstantMessenger
                     {
                         // Read the message from the peer
                         bytesRead = peerSocket.Receive(buffer);
-                        if (bytesRead == 0)
+                        if (bytesRead == 0) // Handle server disconnection
                         {
                             MessageBox.Show("Server disconnected.");
                             Invoke(new MethodInvoker(
@@ -174,6 +167,7 @@ namespace InstantMessenger
                             break;
                         }
 
+                        // Update the chatbox with server chat history
                         string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                         chatText.Text = receivedMessage;
                     }
@@ -203,7 +197,7 @@ namespace InstantMessenger
             }
         }
 
-        // Connect to another peer (client mode)
+        // This button starts a client and connects with a given IP address and port
         private void button2_Click(object sender, EventArgs e)
         {
             if (isServerRunning) {
@@ -243,24 +237,29 @@ namespace InstantMessenger
             }
         }
 
-        // Send a message to all connected peers
+        // Send a message to all connected peers in the chatroom
         private void sendButton_Click(object sender, EventArgs e)
         {
+            // Make sure the application is an active client or server
             if (!isServerRunning && !isClient) {
                 return;
             }
 
+            // Build the chatbox text to send
             string message = userName.Text + ": " + messageBox.Text;
+
+            // If the application is the server
             if (isServerRunning)
             {
-                chatHistory += message + Environment.NewLine; // Display sent message
+                // Append your message to the chat history
+                chatHistory += message + Environment.NewLine;
+                // Ensure the chat history does not extend too long
                 chatHistory = ManageLines(chatHistory, maxLines);
+                // The realtime chat history will be the message sent for clients to update
                 message = chatHistory;
                 chatText.Text = message;
             }
-            else { 
-                chatText.AppendText(message + Environment.NewLine);
-            }
+
             byte[] buffer = Encoding.UTF8.GetBytes(message);
 
             try
@@ -281,14 +280,15 @@ namespace InstantMessenger
             }
         }
 
-        // Clean up resources when the form is closed
+        // Clean up resources when the app closes
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             Disconnect();
         }
 
+        // Disconnects and cleans resources
         private void Disconnect() {
-            // Call StopServer to gracefully stop the server before the form closes
+            // Clear the local chat history and empty the text box
             chatHistory = "";
             chatText.Text = chatHistory;
             // Close any remaining connections
@@ -300,6 +300,8 @@ namespace InstantMessenger
                     peerSocket.Close();
                 }
             }
+
+            // Stop any threads and sockets running to deallocate resources
 
             if (isServerRunning)
             {
@@ -321,6 +323,7 @@ namespace InstantMessenger
             }
         }
 
+        // Uses the cancellation token from connection to close the server thread
         private void StopServer() {
             if (cancellationTokenSource != null)
             {
@@ -335,6 +338,8 @@ namespace InstantMessenger
                 isServerRunning = false;
             }
         }
+
+        // Uses the cancellation token from connection to close the client thread
         private void StopClient()
         {
             if (cancellationTokenSource != null)
@@ -352,6 +357,7 @@ namespace InstantMessenger
             }
         }
 
+        // This retrieves the IP address from the local client 
         public static IPAddress GetLocalIPAddress()
         {
             // Get all IP addresses associated with the local machine
@@ -366,13 +372,14 @@ namespace InstantMessenger
 
             return null;  // If no IPv4 address found
         }
+        // This retrieves the internet IP address (unused for now)
         public static IPAddress GetPublicIPAddress()
         {
+            // This code retrieves the internet IP address and returns it as an IPAddress object 
             using (HttpClient client = new HttpClient())
             {
                 try
                 {
-                    // Synchronously wait for the response from the external API
                     string publicIpString = client.GetStringAsync("https://api.ipify.org").GetAwaiter().GetResult();
 
                     IPAddress publicIp = IPAddress.Parse(publicIpString);
@@ -386,6 +393,7 @@ namespace InstantMessenger
             }
         }
 
+        // Maintains the chatroom length to prevent excessive scrolling
         public static string ManageLines(string text, int maxLines)
         {
             // Split the text into lines
@@ -402,11 +410,14 @@ namespace InstantMessenger
             return string.Join(Environment.NewLine, lines);
         }
 
+        // Disconnects the server/client
         private void button3_Click(object sender, EventArgs e)
         {
             ResetUI();
             Disconnect();
         }
+
+        // Restores the UI's ability to take inputs
         private void ResetUI() {
             chatroomIP.Text = "";
             chatroomIP.ReadOnly = false;
@@ -421,7 +432,19 @@ namespace InstantMessenger
             userName.BackColor = TextBox.DefaultBackColor;
             userName.BorderStyle = BorderStyle.Fixed3D;
         }
-
+        // Forces the UI to become read-only
+        private void LockUI() {
+            chatroomIP.ReadOnly = true;
+            chatroomIP.BackColor = Control.DefaultBackColor;
+            chatroomIP.BorderStyle = BorderStyle.None;
+            chatroomPort.ReadOnly = true;
+            chatroomPort.BackColor = Control.DefaultBackColor;
+            chatroomPort.BorderStyle = BorderStyle.None;
+            userName.ReadOnly = true;
+            userName.BackColor = Control.DefaultBackColor;
+            userName.BorderStyle = BorderStyle.None;
+        }
+        // Attempts connection given an IP and port
         private void TryConnectWithTimeout(string peerIP, int peerPort, int timeoutMilliseconds)
         {
             bool connected = false;
@@ -453,12 +476,12 @@ namespace InstantMessenger
                     // Wait until the connection attempt is complete or the timeout is reached
                     if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMilliseconds)
                     {
-                        // Timeout reached, abort connection attempt
+                        // If the timeout is reached, abort the attempt
                         if (peerClientSocket.Connected)
                         {
                             peerClientSocket.Close();
                         }
-                        connectionThread.Abort(); // Stop the connection thread
+                        connectionThread.Abort(); // Abort the connection thread and display the error message
                         Invoke(new Action(() => MessageBox.Show("Connection attempt timed out.")));
                         return;
                     }
@@ -471,21 +494,18 @@ namespace InstantMessenger
                 {
                     Invoke(new Action(() =>
                     {
+                        // Register the peer connection
                         peerConnections.Add(peerClientSocket);
 
-                        chatroomIP.ReadOnly = true;
-                        chatroomIP.BackColor = Control.DefaultBackColor;
-                        chatroomIP.BorderStyle = BorderStyle.None;
-                        chatroomPort.ReadOnly = true;
-                        chatroomPort.BackColor = Control.DefaultBackColor;
-                        chatroomPort.BorderStyle = BorderStyle.None;
-                        userName.ReadOnly = true;
-                        userName.BackColor = Control.DefaultBackColor;
-                        userName.BorderStyle = BorderStyle.None;
+                        LockUI();
+
                         isClient = true;
 
+                        // Prepare token for disconnection
                         cancellationTokenSource = new CancellationTokenSource();
                         CancellationToken token = cancellationTokenSource.Token;
+
+                        // Start the client thread
                         clientCommunicationThread = new Thread(() => HandlePeerCommunication(peerClientSocket, token));
                         clientCommunicationThread.Start();
                         MessageBox.Show("Connected successfully!");
