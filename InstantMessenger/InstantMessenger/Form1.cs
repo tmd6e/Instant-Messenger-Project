@@ -40,6 +40,23 @@ namespace InstantMessenger
                 return;
             }
 
+            // Retrieve local machine IP address
+            IPAddress address;
+
+            if (!IPAddress.TryParse(chatroomIP.Text, out address))
+            {
+                MessageBox.Show("Invalid IP address. Could not start server.");
+                    return;
+            }
+
+            int port;
+
+            if (!int.TryParse(chatroomPort.Text, out port))
+            {
+                MessageBox.Show("Invalid port. Could not start server.");
+                return;
+            }
+
             if (userName.Text != "") {
                 // Create a token
                 cancellationTokenSource = new CancellationTokenSource();
@@ -48,7 +65,6 @@ namespace InstantMessenger
                 serverThread = new Thread(() => StartServer(token));
                 serverThread.Start();
                 //lblStatus.Text = "Listening for incoming connections...";
-                isServerRunning = true;
                 
             }
             else
@@ -64,13 +80,18 @@ namespace InstantMessenger
             try
             {
                 // Retrieve local machine IP address
-                IPAddress address = GetLocalIPAddress();
+                IPAddress address = IPAddress.Parse(chatroomIP.Text);
                 int port = int.Parse(chatroomPort.Text);
                 IPEndPoint ipEndPoint = new IPEndPoint(address, port);  // Listening on port 8000
+
+                
+
+
                 // Prepare the server socket
                 serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 serverSocket.Bind(ipEndPoint);
                 serverSocket.Listen(maxPeers); // Allow up to 10 pending connections
+                isServerRunning = true;
 
                 // Lock the server information boxes once the server is established
                 if (chatroomInfo.InvokeRequired)
@@ -517,6 +538,22 @@ namespace InstantMessenger
             {
                 // Handle unexpected errors
                 Invoke(new Action(() => MessageBox.Show("Error during connection attempt: " + ex.Message)));
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            if (!isServerRunning && !isClient) {
+                chatroomIP.Text = GetLocalIPAddress().ToString();
+            }
+            
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            if (!isServerRunning && !isClient)
+            {
+                chatroomIP.Text = GetPublicIPAddress().ToString();
             }
         }
     }
